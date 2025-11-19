@@ -1,329 +1,434 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A E T H E R | Concept</title>
+    <title>A E T H E R | OMEGA PROTOCOL</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@300;500;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --accent: #8b5cf6;
-            --glass: rgba(255, 255, 255, 0.05);
+            --primary: #00f3ff; /* Cyan Cyberpunk */
+            --accent: #ff0055;  /* Neon Red */
+            --bg: #030304;
+            --glass: rgba(255, 255, 255, 0.02);
+            --grid-line: rgba(0, 243, 255, 0.1);
         }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; } /* On cache le curseur par défaut */
 
         body {
-            background-color: #050505;
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden; /* Hide horizontal scroll */
+            background-color: var(--bg);
+            color: #e0e0e0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            user-select: none; /* Pas de sélection de texte pour l'immersion */
         }
 
-        /* The 3D Canvas Layer */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            z-index: -1; /* Puts 3D behind text */
-            outline: none;
+        /* --- 1. CUSTOM CURSOR --- */
+        #cursor {
+            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
+            border: 1px solid var(--primary); border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%); transition: transform 0.1s;
+            mix-blend-mode: difference;
+        }
+        #cursor-dot {
+            position: fixed; top: 0; left: 0; width: 4px; height: 4px;
+            background: var(--accent); border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+        body.hovered #cursor { transform: translate(-50%, -50%) scale(2.5); border-color: var(--accent); background: rgba(255,0,85,0.1); }
+
+        /* --- 2. CRT OVERLAY (Effet Vieil Écran) --- */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
+            background-size: 100% 4px; pointer-events: none; z-index: 500; opacity: 0.3;
         }
 
-        /* UI Layout */
-        main {
-            position: relative;
-            z-index: 1;
+        /* --- 3. UI HUD (Heads Up Display) --- */
+        .hud-top-left { position: fixed; top: 20px; left: 20px; z-index: 100; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--primary); }
+        .hud-bottom-right { position: fixed; bottom: 20px; right: 20px; z-index: 100; text-align: right; }
+        
+        .xp-bar-container {
+            width: 200px; height: 4px; background: #333; margin-top: 5px;
+        }
+        .xp-bar-fill {
+            width: 0%; height: 100%; background: var(--primary); transition: width 0.2s;
+            box-shadow: 0 0 10px var(--primary);
         }
 
-        section {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 10%;
-        }
-
-        /* Typography */
-        h1 {
-            font-family: 'Syncopate', sans-serif;
-            font-size: clamp(3rem, 8vw, 8rem); /* Responsive text */
-            font-weight: 700;
-            letter-spacing: -0.05em;
-            background: linear-gradient(to bottom, #fff, #666);
-            -webkit-background-clip: text;
-            color: transparent;
-            line-height: 1;
-            margin-bottom: 20px;
-            opacity: 0; /* For animation */
-            transform: translateY(50px);
-        }
-
-        h2 {
-            font-family: 'Syncopate', sans-serif;
-            font-size: 3rem;
-            margin-bottom: 2rem;
-        }
-
-        p {
-            font-size: 1.2rem;
-            color: #888;
-            max-width: 500px;
-            line-height: 1.6;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-
-        /* Glass Cards */
-        .card {
-            background: var(--glass);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            margin-top: 2rem;
-            max-width: 400px;
-            transition: transform 0.3s ease;
-        }
-        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
-
-        .btn {
-            display: inline-block;
-            margin-top: 2rem;
-            padding: 1rem 2.5rem;
-            background: white;
-            color: black;
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 50px;
-            transition: 0.3s;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        .btn:hover { background: var(--accent); color: white; }
-
-        /* Navigation */
+        /* --- 4. NAVIGATION --- */
         nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 2rem 3rem;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-            mix-blend-mode: difference; /* Cool effect over white/black */
+            position: fixed; top: 0; width: 100%; padding: 2rem 5%;
+            display: flex; justify-content: space-between; align-items: center; z-index: 200;
+            backdrop-filter: blur(5px);
         }
-        .logo { font-family: 'Syncopate'; font-weight: bold; }
+        .logo { font-family: 'Syncopate'; font-weight: 700; font-size: 1.5rem; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); }
+        .nav-btn { 
+            font-family: 'JetBrains Mono'; font-size: 0.8rem; color: white; 
+            border: 1px solid rgba(255,255,255,0.3); padding: 0.5rem 1.5rem;
+            transition: 0.3s; text-transform: uppercase; position: relative; overflow: hidden;
+        }
+        .nav-btn:hover { background: var(--primary); color: black; border-color: var(--primary); }
 
-        /* Loading Screen */
-        #loader {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Syncopate';
-            color: var(--accent);
-            transition: opacity 1s ease;
+        /* --- 5. SECTIONS --- */
+        section { min-height: 100vh; padding: 0 10%; display: flex; flex-direction: column; justify-content: center; position: relative; border-bottom: 1px solid var(--glass); }
+        
+        h1 {
+            font-family: 'Syncopate'; font-size: clamp(3rem, 8vw, 9rem); text-transform: uppercase; line-height: 0.8;
+            background: linear-gradient(180deg, #fff, #444); -webkit-background-clip: text; color: transparent;
+            margin-bottom: 2rem; position: relative;
         }
+        h1::after { /* Glitch Effect Clone */
+            content: 'AETHER'; position: absolute; top: 0; left: 0; color: var(--accent); opacity: 0.5;
+            transform: translate(-2px, 2px); mix-blend-mode: multiply; z-index: -1; animation: glitch 2s infinite;
+        }
+
+        @keyframes glitch {
+            0% { clip-path: inset(10% 0 80% 0); transform: translate(-2px, 1px); }
+            20% { clip-path: inset(80% 0 1% 0); transform: translate(2px, -1px); }
+            40% { clip-path: inset(40% 0 20% 0); transform: translate(-2px, 2px); }
+            100% { clip-path: inset(10% 0 80% 0); transform: translate(0); }
+        }
+
+        .terminal-box {
+            background: rgba(0,0,0,0.8); border: 1px solid var(--grid-line); padding: 20px;
+            font-family: 'JetBrains Mono'; font-size: 12px; color: var(--primary);
+            max-width: 400px; height: 150px; overflow: hidden; margin-top: 2rem;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+
+        /* --- 6. GRID INTERACTIVE --- */
+        .mega-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px;
+            width: 100%; perspective: 1000px;
+        }
+        .grid-cell {
+            background: rgba(255,255,255,0.02); height: 100px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; position: relative; overflow: hidden;
+        }
+        .grid-cell:hover { background: var(--primary); color: black; transform: scale(1.1) translateZ(20px); z-index: 10; box-shadow: 0 0 30px var(--primary); }
+        .grid-cell::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.8), transparent);
+            transform: rotate(45deg) translateY(100%); transition: 0.5s;
+        }
+        .grid-cell:hover::before { transform: rotate(45deg) translateY(-100%); }
+
+        /* --- 7. 3D CANVAS --- */
+        #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; }
+
+        /* --- 8. AUDIO TOGGLE --- */
+        #audio-btn {
+            position: fixed; bottom: 30px; left: 30px; width: 40px; height: 40px;
+            border: 1px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 200; transition: 0.3s; opacity: 0.5;
+        }
+        #audio-btn:hover { opacity: 1; box-shadow: 0 0 15px var(--primary); }
+        .bar { width: 3px; height: 10px; background: var(--primary); margin: 1px; animation: equalize 1s infinite; }
+        @keyframes equalize { 0%, 100% { height: 5px; } 50% { height: 15px; } }
+
     </style>
 </head>
 <body>
 
-    <div id="loader">INITIALIZING CORE...</div>
+    <div id="cursor"></div><div id="cursor-dot"></div>
+    <div class="scanlines"></div>
+    
+    <div class="hud-top-left">
+        FPS: <span id="fps">60</span><br>
+        COORDS: <span id="coords">000.000</span><br>
+        STATUS: <span style="color:var(--accent)">ONLINE</span>
+    </div>
+
+    <div class="hud-bottom-right">
+        <div style="font-family: 'Syncopate'; font-weight:bold;">SECURITY LEVEL</div>
+        <div class="xp-bar-container"><div class="xp-bar-fill" id="xp-bar"></div></div>
+        <div id="level-text" style="font-size:10px; margin-top:5px;">Lvl. 1 ROOKIE</div>
+    </div>
+
+    <div id="audio-btn" onclick="toggleAudio()">
+        <div class="bar" style="animation-delay: 0s"></div>
+        <div class="bar" style="animation-delay: 0.2s"></div>
+        <div class="bar" style="animation-delay: 0.4s"></div>
+    </div>
 
     <nav>
-        <div class="logo">AETHER</div>
-        <div>MENU</div>
+        <div class="logo" data-hover>AETHER</div>
+        <div class="nav-btn" data-hover onclick="warpSpeed()">ACTIVATE WARP</div>
     </nav>
 
     <div id="canvas-container"></div>
 
     <main>
-        <section id="hero">
-            <h1 class="anim-text">DIGITAL<br>ALCHEMY</h1>
-            <p class="anim-text">The intersection of geometry, light, and code. Experience the future of web interaction.</p>
-            <a href="#" class="btn anim-text">ENTER SYSTEM</a>
-        </section>
-
-        <section style="align-items: flex-end; text-align: right;">
-            <h2 class="anim-text">NULL POINT</h2>
-            <p class="anim-text">Zero gravity environments simulated in real-time.</p>
-            <div class="card anim-text">
-                <h3 style="margin-bottom:10px; color:white;">Hyper Speed</h3>
-                <p style="font-size:0.9rem;">Rendering millions of particles with zero latency.</p>
+        <section>
+            <h1>AETHER<br>OMEGA</h1>
+            <p style="max-width: 500px; font-size: 1.2rem; margin-bottom: 2rem;">
+                Bienvenue dans le système. Montez le son. <br>
+                <span style="color:var(--primary)">Interaction Requise.</span>
+            </p>
+            <div class="terminal-box" id="terminal">
+                > Initializing System...<br>
+                > Loading Modules...<br>
             </div>
         </section>
 
         <section>
-            <h2 class="anim-text">THE CORE</h2>
-            <p class="anim-text">Constructed from procedural algorithms.</p>
-            <div style="height: 200px;"></div> </section>
+            <h2 style="font-family:Syncopate; font-size: 3rem; margin-bottom: 2rem;">DATABASE</h2>
+            <div class="mega-grid" id="grid">
+                </div>
+        </section>
+
+        <section style="text-align: center; align-items: center;">
+            <h2 style="font-family:Syncopate; font-size: 4rem; color: var(--accent);">GAME OVER?</h2>
+            <p>Tape le "Konami Code" (Haut, Haut, Bas, Bas...) pour voir.</p>
+        </section>
     </main>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-
+    
     <script>
-        // --- SETUP 3D WORLD ---
-        const scene = new THREE.Scene();
+        /* =========================================
+           1. SYSTEM CORE (XP & LOGIC)
+           ========================================= */
+        let xp = 0;
+        let level = 1;
         
-        // Fog for depth (fade to black)
-        scene.fog = new THREE.FogExp2(0x050505, 0.03);
+        function addXP(amount) {
+            xp += amount;
+            const maxXP = level * 100;
+            const percentage = Math.min((xp / maxXP) * 100, 100);
+            
+            document.getElementById('xp-bar').style.width = percentage + '%';
+            
+            if(xp >= maxXP) {
+                level++;
+                xp = 0;
+                document.getElementById('level-text').innerText = "Lvl. " + level + " OPERATOR";
+                playSynthNote(600, 'triangle'); // Level Up Sound
+                // Visual Reward
+                document.documentElement.style.setProperty('--primary', '#'+Math.floor(Math.random()*16777215).toString(16));
+            }
+        }
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        /* =========================================
+           2. AUDIO ENGINE (Web Audio API)
+           ========================================= */
+        let audioCtx;
+        let isMuted = true;
+
+        function initAudio() {
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            isMuted = false;
+            document.getElementById('audio-btn').style.opacity = '1';
+            playSynthNote(200, 'sine');
+        }
+
+        function toggleAudio() {
+            if(!audioCtx) initAudio();
+            else {
+                isMuted = !isMuted;
+                document.getElementById('audio-btn').style.opacity = isMuted ? '0.5' : '1';
+            }
+        }
+
+        function playSynthNote(freq, type = 'sine') {
+            if(isMuted || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playDrone() {
+            // Creates a background hum
+            if(isMuted || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+            gain.gain.value = 0.02;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+        }
+
+        /* =========================================
+           3. CUSTOM CURSOR & HUD
+           ========================================= */
+        const cursor = document.getElementById('cursor');
+        const dot = document.getElementById('cursor-dot');
+        const coords = document.getElementById('coords');
+
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.2 });
+            gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0 });
+            
+            // Update coords in HUD
+            coords.innerText = `${e.clientX.toString().padStart(4,'0')}.${e.clientY.toString().padStart(4,'0')}`;
+            
+            // Interactive Hover State
+            if(e.target.hasAttribute('data-hover') || e.target.classList.contains('grid-cell')) {
+                document.body.classList.add('hovered');
+            } else {
+                document.body.classList.remove('hovered');
+            }
+        });
+
+        window.addEventListener('mousedown', () => {
+            cursor.style.transform = "translate(-50%, -50%) scale(0.8)";
+            playSynthNote(300, 'square'); // Click Sound
+        });
         
+        window.addEventListener('mouseup', () => {
+            cursor.style.transform = "translate(-50%, -50%) scale(1)";
+        });
+
+        /* =========================================
+           4. TERMINAL TYPER
+           ========================================= */
+        const terminal = document.getElementById('terminal');
+        const logs = [
+            "Connecting to neural net...", "Decrypting packets...", "Access granted.", 
+            "Optimizing shaders...", "Rendering voxels...", "User detected."
+        ];
+        let logIndex = 0;
+
+        setInterval(() => {
+            if(logIndex < logs.length) {
+                terminal.innerHTML += `> ${logs[logIndex]}<br>`;
+                terminal.scrollTop = terminal.scrollHeight;
+                logIndex++;
+            } else {
+                // Random matrix code
+                const randomHex = Math.random().toString(16).substr(2, 8);
+                terminal.innerHTML += `> Exec: ${randomHex}<br>`;
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        }, 800);
+
+        /* =========================================
+           5. GRID GENERATION
+           ========================================= */
+        const grid = document.getElementById('grid');
+        for(let i=0; i<20; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.innerText = `MOD-${i < 10 ? '0'+i : i}`;
+            cell.onclick = function() {
+                addXP(20);
+                this.style.background = 'var(--accent)';
+                this.innerText = 'ACTIVE';
+                playSynthNote(800 + (i*50), 'sawtooth');
+                warpSpeed(0.5); // Small warp on click
+            };
+            grid.appendChild(cell);
+        }
+
+        /* =========================================
+           6. THREE.JS SCENE (The Visuals)
+           ========================================= */
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // --- CREATE OBJECTS ---
+        // PARTICLE TUNNEL
+        const geometry = new THREE.BufferGeometry();
+        const count = 3000;
+        const posArray = new Float32Array(count * 3);
         
-        // 1. The "Core" (A complex wireframe shape)
-        const geometry = new THREE.IcosahedronGeometry(1.5, 1); // Shape, Detail
-        const material = new THREE.MeshBasicMaterial({ 
-            color: 0x8b5cf6, 
-            wireframe: true,
-            transparent: true,
-            opacity: 0.3
-        });
-        const core = new THREE.Mesh(geometry, material);
-        
-        // 2. The "Shell" (Glass-like outer layer)
-        const shellGeo = new THREE.IcosahedronGeometry(2, 1);
-        const shellMat = new THREE.MeshPhongMaterial({ 
-            color: 0x222222, 
-            transparent: true, 
-            opacity: 0.1,
-            shininess: 100,
-            specular: 0xffffff,
-            side: THREE.DoubleSide
-        });
-        const shell = new THREE.Mesh(shellGeo, shellMat);
-
-        // Group them to rotate together
-        const group = new THREE.Group();
-        group.add(core);
-        group.add(shell);
-        scene.add(group);
-
-        // 3. Particles (Stars)
-        const particlesGeo = new THREE.BufferGeometry();
-        const particleCount = 1000;
-        const posArray = new Float32Array(particleCount * 3);
-        
-        for(let i = 0; i < particleCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 20; // Spread
+        for(let i=0; i<count*3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100;
         }
-        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMat = new THREE.PointsMaterial({
-            size: 0.02,
-            color: 0xffffff
+        
+        geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const material = new THREE.PointsMaterial({
+            size: 0.1,
+            color: 0x00f3ff,
+            transparent: true,
+            opacity: 0.8,
         });
-        const particles = new THREE.Points(particlesGeo, particlesMat);
+        
+        const particles = new THREE.Points(geometry, material);
         scene.add(particles);
 
-        // --- LIGHTING ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
+        camera.position.z = 30;
 
-        const pointLight = new THREE.PointLight(0x8b5cf6, 2);
-        pointLight.position.set(5, 5, 5);
-        scene.add(pointLight);
-        
-        const blueLight = new THREE.PointLight(0x3b82f6, 2);
-        blueLight.position.set(-5, -5, 5);
-        scene.add(blueLight);
+        let speed = 0.05;
+        let targetSpeed = 0.05;
 
-        camera.position.z = 6;
+        function warpSpeed(duration = 0) {
+            targetSpeed = 2.0; // Super fast
+            playSynthNote(100, 'sawtooth'); // Engine roar
+            setTimeout(() => { targetSpeed = 0.05; }, duration ? duration * 1000 : 2000);
+        }
 
-        // --- ANIMATION LOOP ---
-        let mouseX = 0;
-        let mouseY = 0;
-
-        // Track mouse for subtle movement
-        document.addEventListener('mousemove', (event) => {
-            mouseX = event.clientX / window.innerWidth - 0.5;
-            mouseY = event.clientY / window.innerHeight - 0.5;
-        });
-
-        const clock = new THREE.Clock();
-
+        // ANIMATION LOOP
         function animate() {
             requestAnimationFrame(animate);
-            const t = clock.getElapsedTime();
+            
+            // Smooth acceleration
+            speed += (targetSpeed - speed) * 0.05;
+            
+            // Move particles towards camera
+            const positions = particles.geometry.attributes.position.array;
+            for(let i=2; i<count*3; i+=3) {
+                positions[i] += speed; 
+                if(positions[i] > 20) {
+                    positions[i] = -80; // Reset to back
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
 
-            // Rotate the object automatically
-            group.rotation.y = t * 0.2;
-            group.rotation.x = Math.sin(t * 0.5) * 0.1;
-
-            // Mouse Interaction (Parallax)
-            group.rotation.y += mouseX * 0.5;
-            group.rotation.x += mouseY * 0.5;
-
-            // Breathe effect
-            const scale = 1 + Math.sin(t) * 0.05;
-            core.scale.set(scale, scale, scale);
+            // Rotate slightly
+            particles.rotation.z += 0.001;
 
             renderer.render(scene, camera);
         }
         animate();
 
-        // --- SCROLL ANIMATIONS (GSAP) ---
-        gsap.registerPlugin(ScrollTrigger);
-
-        // 1. Text Reveal Animations
-        gsap.utils.toArray('.anim-text').forEach(element => {
-            gsap.to(element, {
-                opacity: 1,
-                y: 0,
-                duration: 1,
-                ease: "power3.out",
-                scrollTrigger: {
-                    trigger: element,
-                    start: "top 80%", // Starts when element is 80% down the viewport
-                }
-            });
-        });
-
-        // 2. 3D Scroll Interactions
-        // When scrolling, move the 3D object
-        window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY;
-            
-            // Move camera slightly
-            camera.position.z = 6 + scrollY * 0.002;
-            
-            // Rotate object based on scroll
-            group.rotation.z = scrollY * 0.001;
-            
-            // Shift background particles
-            particles.rotation.y = scrollY * 0.0005;
-        });
-
-        // --- RESIZE HANDLER ---
+        // RESIZE
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // --- REMOVE LOADER ---
-        window.addEventListener('load', () => {
-            const loader = document.getElementById('loader');
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.display = 'none';
-            }, 1000);
+        /* =========================================
+           7. EASTER EGG (KONAMI CODE)
+           ========================================= */
+        const secretCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let inputIndex = 0;
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === secretCode[inputIndex]) {
+                inputIndex++;
+                if (inputIndex === secretCode.length) {
+                    alert("GOD MODE ACTIVATED: +10000 XP");
+                    addXP(10000);
+                    material.color.setHex(0xff0055); // Turn particles red
+                    targetSpeed = 5.0;
+                    inputIndex = 0;
+                }
+            } else {
+                inputIndex = 0;
+            }
         });
 
     </script>
