@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A E T H E R | Concept</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent: #8b5cf6;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden; /* Hide horizontal scroll */
+        }
+
+        /* The 3D Canvas Layer */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1; /* Puts 3D behind text */
+            outline: none;
+        }
+
+        /* UI Layout */
+        main {
+            position: relative;
+            z-index: 1;
+        }
+
+        section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 10%;
+        }
+
+        /* Typography */
+        h1 {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(3rem, 8vw, 8rem); /* Responsive text */
+            font-weight: 700;
+            letter-spacing: -0.05em;
+            background: linear-gradient(to bottom, #fff, #666);
+            -webkit-background-clip: text;
+            color: transparent;
+            line-height: 1;
+            margin-bottom: 20px;
+            opacity: 0; /* For animation */
+            transform: translateY(50px);
+        }
+
+        h2 {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #888;
+            max-width: 500px;
+            line-height: 1.6;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        /* Glass Cards */
+        .card {
+            background: var(--glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            margin-top: 2rem;
+            max-width: 400px;
+            transition: transform 0.3s ease;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
+
+        .btn {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            background: white;
+            color: black;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 50px;
+            transition: 0.3s;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .btn:hover { background: var(--accent); color: white; }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+            mix-blend-mode: difference; /* Cool effect over white/black */
+        }
+        .logo { font-family: 'Syncopate'; font-weight: bold; }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Syncopate';
+            color: var(--accent);
+            transition: opacity 1s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">INITIALIZING CORE...</div>
+
+    <nav>
+        <div class="logo">AETHER</div>
+        <div>MENU</div>
+    </nav>
+
+    <div id="canvas-container"></div>
+
+    <main>
+        <section id="hero">
+            <h1 class="anim-text">DIGITAL<br>ALCHEMY</h1>
+            <p class="anim-text">The intersection of geometry, light, and code. Experience the future of web interaction.</p>
+            <a href="#" class="btn anim-text">ENTER SYSTEM</a>
+        </section>
+
+        <section style="align-items: flex-end; text-align: right;">
+            <h2 class="anim-text">NULL POINT</h2>
+            <p class="anim-text">Zero gravity environments simulated in real-time.</p>
+            <div class="card anim-text">
+                <h3 style="margin-bottom:10px; color:white;">Hyper Speed</h3>
+                <p style="font-size:0.9rem;">Rendering millions of particles with zero latency.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="anim-text">THE CORE</h2>
+            <p class="anim-text">Constructed from procedural algorithms.</p>
+            <div style="height: 200px;"></div> </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        // --- SETUP 3D WORLD ---
+        const scene = new THREE.Scene();
+        
+        // Fog for depth (fade to black)
+        scene.fog = new THREE.FogExp2(0x050505, 0.03);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // --- CREATE OBJECTS ---
+        
+        // 1. The "Core" (A complex wireframe shape)
+        const geometry = new THREE.IcosahedronGeometry(1.5, 1); // Shape, Detail
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0x8b5cf6, 
+            wireframe: true,
+            transparent: true,
+            opacity: 0.3
+        });
+        const core = new THREE.Mesh(geometry, material);
+        
+        // 2. The "Shell" (Glass-like outer layer)
+        const shellGeo = new THREE.IcosahedronGeometry(2, 1);
+        const shellMat = new THREE.MeshPhongMaterial({ 
+            color: 0x222222, 
+            transparent: true, 
+            opacity: 0.1,
+            shininess: 100,
+            specular: 0xffffff,
+            side: THREE.DoubleSide
+        });
+        const shell = new THREE.Mesh(shellGeo, shellMat);
+
+        // Group them to rotate together
+        const group = new THREE.Group();
+        group.add(core);
+        group.add(shell);
+        scene.add(group);
+
+        // 3. Particles (Stars)
+        const particlesGeo = new THREE.BufferGeometry();
+        const particleCount = 1000;
+        const posArray = new Float32Array(particleCount * 3);
+        
+        for(let i = 0; i < particleCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 20; // Spread
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({
+            size: 0.02,
+            color: 0xffffff
+        });
+        const particles = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particles);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0x8b5cf6, 2);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+        
+        const blueLight = new THREE.PointLight(0x3b82f6, 2);
+        blueLight.position.set(-5, -5, 5);
+        scene.add(blueLight);
+
+        camera.position.z = 6;
+
+        // --- ANIMATION LOOP ---
+        let mouseX = 0;
+        let mouseY = 0;
+
+        // Track mouse for subtle movement
+        document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX / window.innerWidth - 0.5;
+            mouseY = event.clientY / window.innerHeight - 0.5;
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+
+            // Rotate the object automatically
+            group.rotation.y = t * 0.2;
+            group.rotation.x = Math.sin(t * 0.5) * 0.1;
+
+            // Mouse Interaction (Parallax)
+            group.rotation.y += mouseX * 0.5;
+            group.rotation.x += mouseY * 0.5;
+
+            // Breathe effect
+            const scale = 1 + Math.sin(t) * 0.05;
+            core.scale.set(scale, scale, scale);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // --- SCROLL ANIMATIONS (GSAP) ---
+        gsap.registerPlugin(ScrollTrigger);
+
+        // 1. Text Reveal Animations
+        gsap.utils.toArray('.anim-text').forEach(element => {
+            gsap.to(element, {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: element,
+                    start: "top 80%", // Starts when element is 80% down the viewport
+                }
+            });
+        });
+
+        // 2. 3D Scroll Interactions
+        // When scrolling, move the 3D object
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            
+            // Move camera slightly
+            camera.position.z = 6 + scrollY * 0.002;
+            
+            // Rotate object based on scroll
+            group.rotation.z = scrollY * 0.001;
+            
+            // Shift background particles
+            particles.rotation.y = scrollY * 0.0005;
+        });
+
+        // --- RESIZE HANDLER ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- REMOVE LOADER ---
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000);
+        });
+
+    </script>
+</body>
+</html>
