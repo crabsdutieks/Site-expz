@@ -1,436 +1,288 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A E T H E R | OMEGA PROTOCOL</title>
+    <title>Nebula Trading | The Algorithmic Edge</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@300;500;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #00f3ff; /* Cyan Cyberpunk */
-            --accent: #ff0055;  /* Neon Red */
-            --bg: #030304;
-            --glass: rgba(255, 255, 255, 0.02);
-            --grid-line: rgba(0, 243, 255, 0.1);
+            --bg-color: #000000;
+            --text-main: #ffffff;
+            --text-muted: #86868b;
+            --accent: #2997ff; /* Apple Blue */
+            --accent-glow: rgba(41, 151, 255, 0.4);
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none; } /* On cache le curseur par défaut */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background-color: var(--bg);
-            color: #e0e0e0;
-            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             overflow-x: hidden;
-            user-select: none; /* Pas de sélection de texte pour l'immersion */
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* --- 1. CUSTOM CURSOR --- */
-        #cursor {
-            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
-            border: 1px solid var(--primary); border-radius: 50%;
-            pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%); transition: transform 0.1s;
-            mix-blend-mode: difference;
-        }
-        #cursor-dot {
-            position: fixed; top: 0; left: 0; width: 4px; height: 4px;
-            background: var(--accent); border-radius: 50%;
-            pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%);
-        }
-        body.hovered #cursor { transform: translate(-50%, -50%) scale(2.5); border-color: var(--accent); background: rgba(255,0,85,0.1); }
-
-        /* --- 2. CRT OVERLAY (Effet Vieil Écran) --- */
-        .scanlines {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
-            background-size: 100% 4px; pointer-events: none; z-index: 500; opacity: 0.3;
+        /* --- 3D BACKGROUND --- */
+        #canvas-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            z-index: -1; opacity: 0.6;
+            pointer-events: none; /* Let clicks pass through */
         }
 
-        /* --- 3. UI HUD (Heads Up Display) --- */
-        .hud-top-left { position: fixed; top: 20px; left: 20px; z-index: 100; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--primary); }
-        .hud-bottom-right { position: fixed; bottom: 20px; right: 20px; z-index: 100; text-align: right; }
+        /* --- UI UTILITIES --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .section-pad { padding: 8rem 0; }
         
-        .xp-bar-container {
-            width: 200px; height: 4px; background: #333; margin-top: 5px;
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.03em; }
+        
+        .gradient-text {
+            background: linear-gradient(90deg, #fff, #888);
+            -webkit-background-clip: text;
+            color: transparent;
         }
-        .xp-bar-fill {
-            width: 0%; height: 100%; background: var(--primary); transition: width 0.2s;
-            box-shadow: 0 0 10px var(--primary);
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--text-main);
+            color: black;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        
+        .btn-outline {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); }
 
-        /* --- 4. NAVIGATION --- */
+        /* --- NAVIGATION --- */
         nav {
-            position: fixed; top: 0; width: 100%; padding: 2rem 5%;
-            display: flex; justify-content: space-between; align-items: center; z-index: 200;
-            backdrop-filter: blur(5px);
+            position: fixed; top: 0; width: 100%;
+            padding: 1.5rem 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .logo { font-family: 'Syncopate'; font-weight: 700; font-size: 1.5rem; letter-spacing: 3px; text-shadow: 0 0 10px var(--primary); }
-        .nav-btn { 
-            font-family: 'JetBrains Mono'; font-size: 0.8rem; color: white; 
-            border: 1px solid rgba(255,255,255,0.3); padding: 0.5rem 1.5rem;
-            transition: 0.3s; text-transform: uppercase; position: relative; overflow: hidden;
-        }
-        .nav-btn:hover { background: var(--primary); color: black; border-color: var(--primary); }
+        .nav-flex { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 700; font-size: 1.2rem; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; }
+        .logo-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
+        .nav-links a { color: var(--text-muted); text-decoration: none; margin-left: 2rem; font-size: 0.9rem; transition: 0.3s; }
+        .nav-links a:hover { color: white; }
 
-        /* --- 5. SECTIONS --- */
-        section { min-height: 100vh; padding: 0 10%; display: flex; flex-direction: column; justify-content: center; position: relative; border-bottom: 1px solid var(--glass); }
+        /* --- HERO --- */
+        .hero {
+            height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
+            position: relative;
+        }
+        .hero h1 { font-size: clamp(3rem, 6vw, 5rem); line-height: 1.1; margin-bottom: 1.5rem; }
+        .hero p { color: var(--text-muted); font-size: 1.2rem; max-width: 600px; margin-bottom: 2.5rem; line-height: 1.6; }
         
-        h1 {
-            font-family: 'Syncopate'; font-size: clamp(3rem, 8vw, 9rem); text-transform: uppercase; line-height: 0.8;
-            background: linear-gradient(180deg, #fff, #444); -webkit-background-clip: text; color: transparent;
-            margin-bottom: 2rem; position: relative;
+        /* --- TICKER --- */
+        .ticker-wrap {
+            width: 100%; overflow: hidden; background: rgba(255,255,255,0.02); border-y: 1px solid var(--border);
+            padding: 10px 0; position: absolute; bottom: 0; left: 0; backdrop-filter: blur(5px);
         }
-        h1::after { /* Glitch Effect Clone */
-            content: 'AETHER'; position: absolute; top: 0; left: 0; color: var(--accent); opacity: 0.5;
-            transform: translate(-2px, 2px); mix-blend-mode: multiply; z-index: -1; animation: glitch 2s infinite;
-        }
+        .ticker { display: flex; white-space: nowrap; animation: ticker 30s linear infinite; }
+        .ticker-item { margin: 0 30px; font-family: 'Space Grotesk'; font-size: 0.9rem; color: var(--text-muted); }
+        .up { color: #4ade80; } .down { color: #f87171; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        @keyframes glitch {
-            0% { clip-path: inset(10% 0 80% 0); transform: translate(-2px, 1px); }
-            20% { clip-path: inset(80% 0 1% 0); transform: translate(2px, -1px); }
-            40% { clip-path: inset(40% 0 20% 0); transform: translate(-2px, 2px); }
-            100% { clip-path: inset(10% 0 80% 0); transform: translate(0); }
+        /* --- FEATURES GRID --- */
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 4rem; }
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            transition: 0.4s ease;
         }
+        .card:hover { background: rgba(255,255,255,0.08); transform: translateY(-5px); border-color: rgba(255,255,255,0.2); }
+        .icon-box { width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; font-size: 1.5rem; }
+        
+        /* --- STATS --- */
+        .stats-section { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.5); }
+        .stat-item h3 { font-size: 3.5rem; color: white; margin-bottom: 0.5rem; }
+        .stat-item p { color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
 
-        .terminal-box {
-            background: rgba(0,0,0,0.8); border: 1px solid var(--grid-line); padding: 20px;
-            font-family: 'JetBrains Mono'; font-size: 12px; color: var(--primary);
-            max-width: 400px; height: 150px; overflow: hidden; margin-top: 2rem;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        /* --- PRICING --- */
+        .price-card {
+            display: flex; flex-direction: column;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            background: rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
         }
+        .price-card.featured { border-color: var(--accent); box-shadow: 0 0 30px rgba(41, 151, 255, 0.1); }
+        .price-tag { font-size: 3rem; font-weight: 700; margin: 1rem 0; }
+        .price-tag span { font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+        .feature-list { list-style: none; margin: 2rem 0; flex-grow: 1; }
+        .feature-list li { margin-bottom: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
+        .check { color: var(--accent); }
 
-        /* --- 6. GRID INTERACTIVE --- */
-        .mega-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 2px;
-            width: 100%; perspective: 1000px;
+        /* --- FORM --- */
+        .input-group { display: flex; gap: 10px; margin-top: 2rem; max-width: 500px; width: 100%; }
+        input {
+            flex: 1; background: rgba(255,255,255,0.1); border: 1px solid transparent;
+            padding: 12px 20px; border-radius: 50px; color: white; outline: none; font-family: inherit;
+            transition: 0.3s;
         }
-        .grid-cell {
-            background: rgba(255,255,255,0.02); height: 100px; display: flex; align-items: center; justify-content: center;
-            border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; position: relative; overflow: hidden;
-        }
-        .grid-cell:hover { background: var(--primary); color: black; transform: scale(1.1) translateZ(20px); z-index: 10; box-shadow: 0 0 30px var(--primary); }
-        .grid-cell::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.8), transparent);
-            transform: rotate(45deg) translateY(100%); transition: 0.5s;
-        }
-        .grid-cell:hover::before { transform: rotate(45deg) translateY(-100%); }
-
-        /* --- 7. 3D CANVAS --- */
-        #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; }
-
-        /* --- 8. AUDIO TOGGLE --- */
-        #audio-btn {
-            position: fixed; bottom: 30px; left: 30px; width: 40px; height: 40px;
-            border: 1px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; z-index: 200; transition: 0.3s; opacity: 0.5;
-        }
-        #audio-btn:hover { opacity: 1; box-shadow: 0 0 15px var(--primary); }
-        .bar { width: 3px; height: 10px; background: var(--primary); margin: 1px; animation: equalize 1s infinite; }
-        @keyframes equalize { 0%, 100% { height: 5px; } 50% { height: 15px; } }
+        input:focus { background: rgba(255,255,255,0.15); border-color: var(--accent); }
 
     </style>
 </head>
 <body>
 
-    <div id="cursor"></div><div id="cursor-dot"></div>
-    <div class="scanlines"></div>
-    
-    <div class="hud-top-left">
-        FPS: <span id="fps">60</span><br>
-        COORDS: <span id="coords">000.000</span><br>
-        STATUS: <span style="color:var(--accent)">ONLINE</span>
-    </div>
-
-    <div class="hud-bottom-right">
-        <div style="font-family: 'Syncopate'; font-weight:bold;">SECURITY LEVEL</div>
-        <div class="xp-bar-container"><div class="xp-bar-fill" id="xp-bar"></div></div>
-        <div id="level-text" style="font-size:10px; margin-top:5px;">Lvl. 1 ROOKIE</div>
-    </div>
-
-    <div id="audio-btn" onclick="toggleAudio()">
-        <div class="bar" style="animation-delay: 0s"></div>
-        <div class="bar" style="animation-delay: 0.2s"></div>
-        <div class="bar" style="animation-delay: 0.4s"></div>
-    </div>
-
-    <nav>
-        <div class="logo" data-hover>AETHER</div>
-        <div class="nav-btn" data-hover onclick="warpSpeed()">ACTIVATE WARP</div>
-    </nav>
-
     <div id="canvas-container"></div>
 
-    <main>
-        <section>
-            <h1>AETHER<br>OMEGA</h1>
-            <p style="max-width: 500px; font-size: 1.2rem; margin-bottom: 2rem;">
-                Bienvenue dans le système. Montez le son. <br>
-                <span style="color:var(--primary)">Interaction Requise.</span>
-            </p>
-            <div class="terminal-box" id="terminal">
-                > Initializing System...<br>
-                > Loading Modules...<br>
+    <nav>
+        <div class="container nav-flex">
+            <div class="logo"><div class="logo-dot"></div>NEBULA TRADING</div>
+            <div class="nav-links">
+                <a href="#method">The Method</a>
+                <a href="#results">Performance</a>
+                <a href="#pricing">Membership</a>
+                <a href="#login">Log in</a>
+                <a href="#join" class="btn btn-outline" style="margin-left: 20px; padding: 8px 20px;">Get Access</a>
             </div>
-        </section>
+        </div>
+    </nav>
 
-        <section>
-            <h2 style="font-family:Syncopate; font-size: 3rem; margin-bottom: 2rem;">DATABASE</h2>
-            <div class="mega-grid" id="grid">
+    <section class="hero">
+        <div class="container">
+            <span style="color: var(--accent); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 20px; display: block;">
+                Nebula Algo v4.2 Is Live
+            </span>
+            <h1>Trading is no longer human.<br><span class="gradient-text">It's Nebula.</span></h1>
+            <p>Stop guessing. Start calculating. Access the same institutional-grade algorithms used by Wall Street's top quantitative firms. 100% Automated. Zero Emotion.</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <a href="#pricing" class="btn">Start Free Trial</a>
+                <a href="#method" class="btn btn-outline">View The Logic</a>
+            </div>
+        </div>
+
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <span class="ticker-item">BTC/USD <span class="up">+4.23%</span></span>
+                <span class="ticker-item">ETH/USD <span class="up">+2.10%</span></span>
+                <span class="ticker-item">TSLA <span class="down">-0.45%</span></span>
+                <span class="ticker-item">NVDA <span class="up">+12.4%</span></span>
+                <span class="ticker-item">AAPL <span class="up">+1.02%</span></span>
+                <span class="ticker-item">NEBULA_INDEX <span class="up" style="color:var(--accent)">+42.00%</span></span>
+                <span class="ticker-item">GOLD <span class="down">-0.12%</span></span>
+                <span class="ticker-item">BTC/USD <span class="up">+4.23%</span></span>
+                <span class="ticker-item">ETH/USD <span class="up">+2.10%</span></span>
+                <span class="ticker-item">NEBULA_INDEX <span class="up" style="color:var(--accent)">+42.00%</span></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-pad stats-section" id="results">
+        <div class="container">
+            <div class="grid-3" style="margin-top: 0; text-align: center;">
+                <div class="stat-item">
+                    <h3>$4.2B</h3>
+                    <p>Volume Processed</p>
                 </div>
-        </section>
+                <div class="stat-item">
+                    <h3 class="up" style="color: #4ade80;">87%</h3>
+                    <p>Win Rate (2024)</p>
+                </div>
+                <div class="stat-item">
+                    <h3>0.02s</h3>
+                    <p>Execution Latency</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        <section style="text-align: center; align-items: center;">
-            <h2 style="font-family:Syncopate; font-size: 4rem; color: var(--accent);">GAME OVER?</h2>
-            <p>Tape le "Konami Code" (Haut, Haut, Bas, Bas...) pour voir.</p>
-        </section>
-    </main>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <script>
-        /* =========================================
-           1. SYSTEM CORE (XP & LOGIC)
-           ========================================= */
-        let xp = 0;
-        let level = 1;
-        
-        function addXP(amount) {
-            xp += amount;
-            const maxXP = level * 100;
-            const percentage = Math.min((xp / maxXP) * 100, 100);
+    <section class="section-pad" id="method">
+        <div class="container">
+            <h2 style="font-size: 2.5rem; max-width: 600px;">We don't look at charts. <br><span style="color: var(--text-muted);">We look at the data behind them.</span></h2>
             
-            document.getElementById('xp-bar').style.width = percentage + '%';
-            
-            if(xp >= maxXP) {
-                level++;
-                xp = 0;
-                document.getElementById('level-text').innerText = "Lvl. " + level + " OPERATOR";
-                playSynthNote(600, 'triangle'); // Level Up Sound
-                // Visual Reward
-                document.documentElement.style.setProperty('--primary', '#'+Math.floor(Math.random()*16777215).toString(16));
-            }
-        }
+            <div class="grid-3">
+                <div class="card">
+                    <div class="icon-box">⚡</div>
+                    <h3>HFT Execution</h3>
+                    <p style="color: var(--text-muted); margin-top: 10px; line-height: 1.5;">
+                        Our servers are co-located in NYC and London data centers. We enter and exit trades before the retail market even sees the candle move.
+                    </p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">🧠</div>
+                    <h3>Sentiment Analysis</h3>
+                    <p style="color: var(--text-muted); margin-top: 10px; line-height: 1.5;">
+                        Nebula scans 50,000 news sources and social signals per second. We trade the news before it's news.
+                    </p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">🛡️</div>
+                    <h3>Risk Shield</h3>
+                    <p style="color: var(--text-muted); margin-top: 10px; line-height: 1.5;">
+                        Dynamic position sizing protects your capital. If the market volatility spikes, Nebula automatically hedges your portfolio.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        /* =========================================
-           2. AUDIO ENGINE (Web Audio API)
-           ========================================= */
-        let audioCtx;
-        let isMuted = true;
+    <section class="section-pad" style="background: rgba(255,255,255,0.02);">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 4rem;">Trusted by the 1%</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <p style="font-size: 1.1rem; font-style: italic;">"I used to stare at charts for 12 hours a day. Now I check Nebula once a week. My returns have tripled."</p>
+                    <div style="margin-top: 20px; display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 40px; height: 40px; background: #333; border-radius: 50%;"></div>
+                        <div>
+                            <strong style="display: block;">James L.</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Ex-Goldman Sachs Analyst</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <p style="font-size: 1.1rem; font-style: italic;">"The risk management is flawless. Even during the 2022 crash, Nebula kept my portfolio green. It's almost unfair."</p>
+                    <div style="margin-top: 20px; display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 40px; height: 40px; background: #555; border-radius: 50%;"></div>
+                        <div>
+                            <strong style="display: block;">Sarah K.</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Venture Capitalist</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <p style="font-size: 1.1rem; font-style: italic;">"Worth every penny of the subscription. The 'Whale' tier signals are wildly accurate."</p>
+                    <div style="margin-top: 20px; display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 40px; height: 40px; background: #777; border-radius: 50%;"></div>
+                        <div>
+                            <strong style="display: block;">Michael R.</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Crypto Whale</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        function initAudio() {
-            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            isMuted = false;
-            document.getElementById('audio-btn').style.opacity = '1';
-            playSynthNote(200, 'sine');
-        }
-
-        function toggleAudio() {
-            if(!audioCtx) initAudio();
-            else {
-                isMuted = !isMuted;
-                document.getElementById('audio-btn').style.opacity = isMuted ? '0.5' : '1';
-            }
-        }
-
-        function playSynthNote(freq, type = 'sine') {
-            if(isMuted || !audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
-        }
-
-        function playDrone() {
-            // Creates a background hum
-            if(isMuted || !audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(50, audioCtx.currentTime);
-            gain.gain.value = 0.02;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-        }
-
-        /* =========================================
-           3. CUSTOM CURSOR & HUD
-           ========================================= */
-        const cursor = document.getElementById('cursor');
-        const dot = document.getElementById('cursor-dot');
-        const coords = document.getElementById('coords');
-
-        window.addEventListener('mousemove', (e) => {
-            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.2 });
-            gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0 });
-            
-            // Update coords in HUD
-            coords.innerText = `${e.clientX.toString().padStart(4,'0')}.${e.clientY.toString().padStart(4,'0')}`;
-            
-            // Interactive Hover State
-            if(e.target.hasAttribute('data-hover') || e.target.classList.contains('grid-cell')) {
-                document.body.classList.add('hovered');
-            } else {
-                document.body.classList.remove('hovered');
-            }
-        });
-
-        window.addEventListener('mousedown', () => {
-            cursor.style.transform = "translate(-50%, -50%) scale(0.8)";
-            playSynthNote(300, 'square'); // Click Sound
-        });
-        
-        window.addEventListener('mouseup', () => {
-            cursor.style.transform = "translate(-50%, -50%) scale(1)";
-        });
-
-        /* =========================================
-           4. TERMINAL TYPER
-           ========================================= */
-        const terminal = document.getElementById('terminal');
-        const logs = [
-            "Connecting to neural net...", "Decrypting packets...", "Access granted.", 
-            "Optimizing shaders...", "Rendering voxels...", "User detected."
-        ];
-        let logIndex = 0;
-
-        setInterval(() => {
-            if(logIndex < logs.length) {
-                terminal.innerHTML += `> ${logs[logIndex]}<br>`;
-                terminal.scrollTop = terminal.scrollHeight;
-                logIndex++;
-            } else {
-                // Random matrix code
-                const randomHex = Math.random().toString(16).substr(2, 8);
-                terminal.innerHTML += `> Exec: ${randomHex}<br>`;
-                terminal.scrollTop = terminal.scrollHeight;
-            }
-        }, 800);
-
-        /* =========================================
-           5. GRID GENERATION
-           ========================================= */
-        const grid = document.getElementById('grid');
-        for(let i=0; i<20; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'grid-cell';
-            cell.innerText = `MOD-${i < 10 ? '0'+i : i}`;
-            cell.onclick = function() {
-                addXP(20);
-                this.style.background = 'var(--accent)';
-                this.innerText = 'ACTIVE';
-                playSynthNote(800 + (i*50), 'sawtooth');
-                warpSpeed(0.5); // Small warp on click
-            };
-            grid.appendChild(cell);
-        }
-
-        /* =========================================
-           6. THREE.JS SCENE (The Visuals)
-           ========================================= */
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        // PARTICLE TUNNEL
-        const geometry = new THREE.BufferGeometry();
-        const count = 3000;
-        const posArray = new Float32Array(count * 3);
-        
-        for(let i=0; i<count*3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 100;
-        }
-        
-        geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const material = new THREE.PointsMaterial({
-            size: 0.1,
-            color: 0x00f3ff,
-            transparent: true,
-            opacity: 0.8,
-        });
-        
-        const particles = new THREE.Points(geometry, material);
-        scene.add(particles);
-
-        camera.position.z = 30;
-
-        let speed = 0.05;
-        let targetSpeed = 0.05;
-
-        function warpSpeed(duration = 0) {
-            targetSpeed = 2.0; // Super fast
-            playSynthNote(100, 'sawtooth'); // Engine roar
-            setTimeout(() => { targetSpeed = 0.05; }, duration ? duration * 1000 : 2000);
-        }
-
-        // ANIMATION LOOP
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Smooth acceleration
-            speed += (targetSpeed - speed) * 0.05;
-            
-            // Move particles towards camera
-            const positions = particles.geometry.attributes.position.array;
-            for(let i=2; i<count*3; i+=3) {
-                positions[i] += speed; 
-                if(positions[i] > 20) {
-                    positions[i] = -80; // Reset to back
-                }
-            }
-            particles.geometry.attributes.position.needsUpdate = true;
-
-            // Rotate slightly
-            particles.rotation.z += 0.001;
-
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        // RESIZE
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        /* =========================================
-           7. EASTER EGG (KONAMI CODE)
-           ========================================= */
-        const secretCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-        let inputIndex = 0;
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === secretCode[inputIndex]) {
-                inputIndex++;
-                if (inputIndex === secretCode.length) {
-                    alert("GOD MODE ACTIVATED: +10000 XP");
-                    addXP(10000);
-                    material.color.setHex(0xff0055); // Turn particles red
-                    targetSpeed = 5.0;
-                    inputIndex = 0;
-                }
-            } else {
-                inputIndex = 0;
-            }
-        });
-
-    </script>
-</body>
-</html>
+    <section class="section-pad" id="pricing">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 1rem;">Choose your edge</h2>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 4rem;">Cancel anytime. Returns generated 24/7.</p>
